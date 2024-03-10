@@ -2,6 +2,7 @@ import ts from 'typescript';
 import * as path from 'node:path';
 import { Graph } from './base/common/graph';
 import { ISASourceFile, ISASymbol } from './types/common';
+import { SAContext } from './types/context';
 import { SASourceFile } from './types/sourceFile';
 
 export function programFromConfig(configFileName: string,
@@ -34,33 +35,14 @@ export function programFromConfig(configFileName: string,
     return program;
 }
 
-function findSourceFiles(fileName: string,
-                         program: ts.Program): ts.SourceFile | undefined {
-    return program.getSourceFiles().find(s => s.fileName === fileName);
-}
 async function main() {
     const program = programFromConfig('sample/index.ts');
-    const ctx = {
-        files: new Map<string, ISASourceFile>(),
-        cwd: program.getCurrentDirectory(),
-        symbols: new Map<string, ISASymbol>(),
-    };
-    program.getRootFileNames().forEach((fileName) => {
-        const tsSrcFile = findSourceFiles(fileName, program)!;
-        const f = new SASourceFile(tsSrcFile, ctx);
-        ctx.files.set(f.fullFileName, f);
-    });
-    const graph = new Graph<ISASourceFile>((f) => f.fullFileName);
-    ctx.files.forEach(f => {
-        f.processModuleImport();
-        graph.insertVertex(f);
-        f.deps.forEach((dep) => {
-            graph.insertEdge(f, dep);
-        });
-    });
-    const topSorted = graph.topologicalSort().reverse();
+    const ctx = new SAContext(program);
+    const topSorted = ctx.sort();
+    // transform
     topSorted.forEach(f => f.processSymbolExport());
     topSorted.forEach(f => f.processSymbolImport());
+    // link
 }
 
 main();

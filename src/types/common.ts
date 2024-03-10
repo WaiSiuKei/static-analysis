@@ -1,7 +1,11 @@
-export interface Context {
+import ts from 'typescript';
+import { JSPrimitiveType } from '../base/common/types';
+
+export interface ISAProject {
     readonly files: Map<string, ISASourceFile>;
     readonly cwd: string;
-    readonly symbols: Map<string, ISASymbol>;
+    resolve(currentFile: ISASourceFile,
+            path: string): ISASourceFile | undefined;
 }
 
 export interface ISASourceFile {
@@ -10,8 +14,6 @@ export interface ISASourceFile {
     exportedSymbols: Map<string, ISASymbol>;
     namespaceSymbol: ISANamespaceSymbol;
     processModuleImport(): void;
-    processSymbolImport(): void;
-    processSymbolExport(): void;
 }
 
 export interface ISASymbol {
@@ -19,11 +21,39 @@ export interface ISASymbol {
     file: ISASourceFile;
     lexicalEnvironment: ISALexicalEnvironment;
 }
+// js
+export interface ISAPrimitiveSymbol extends ISASymbol {
+    value: JSPrimitiveType;
+}
+export interface ISAFunctionSignature {
+    arguments: ISACollectionSymbol;
+    return: ISASymbol;
+}
+export interface ISAFunctionSymbol extends ISASymbol {
+    signatures: Array<ISAFunctionSignature>;
+}
+export interface ISACollectionSymbol extends ISASymbol {
 
+}
 export interface ISANamespaceSymbol extends ISASymbol {
 }
-
+// ts
+export interface ISATypeAnySymbol extends ISASymbol {}
+export interface ISAAliasSymbol extends ISASymbol {
+    alias: string;
+    origin: ISASymbol;
+}
 export interface ISALexicalEnvironment {
     uuid: string;
-    importedSymbols: Map<string, ISASymbol>;
+    file: ISASourceFile;
+    symbols: Map<string, ISASymbol>;
+    children: ISALexicalEnvironment[];
+    parent: ISALexicalEnvironment | undefined;
+}
+export interface ISAModuleLexicalEnvironment {
+    exported: Map<string, ISASymbol>;
+}
+
+export enum Keyword {
+    default = 'default'
 }

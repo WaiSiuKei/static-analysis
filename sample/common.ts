@@ -7,3 +7,5 @@ export interface IBar {
     c: IFoo;
     d: string;
 }
+
+export default {}
